@@ -1,19 +1,5 @@
 import { execSync } from "node:child_process";
 
-export async function installPackage(
-  manager: "npm" | "pip",
-  pkg: string,
-  label: string,
-) {
-  console.log(`\n--- ${label} ---\n`);
-
-  const cmd = manager === "npm" ? `npm install ${pkg}` : `pip install ${pkg}`;
-
-  console.log(`Running: ${cmd}\n`);
-  execSync(cmd, { stdio: "inherit" });
-  console.log(`\n${label} installed.`);
-}
-
 export async function installCli() {
   console.log("\n--- Opper CLI ---\n");
 

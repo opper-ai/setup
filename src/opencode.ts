@@ -6,14 +6,17 @@ import { confirm } from "@inquirer/prompts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export async function setupOpenCode() {
+export async function setupOpenCode(location: "global" | "local") {
   console.log("\n--- OpenCode Setup ---\n");
 
   // Read embedded config template
   const templatePath = join(__dirname, "..", "data", "opencode.json");
   const config = readFileSync(templatePath, "utf-8");
 
-  const configDir = join(homedir(), ".config", "opencode");
+  const configDir =
+    location === "global"
+      ? join(homedir(), ".config", "opencode")
+      : process.cwd();
   const configPath = join(configDir, "opencode.json");
 
   // Check if config already exists with opper provider

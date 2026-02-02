@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
-import { checkbox, Separator } from "@inquirer/prompts";
+import { checkbox, select, Separator } from "@inquirer/prompts";
+import { exec } from "node:child_process";
 import { setupOpenCode } from "./opencode.js";
+import { setupContinue } from "./continue.js";
 import { setupSkills } from "./skills.js";
 import { setupApiKey } from "./apikey.js";
-import { installPackage, installCli } from "./install.js";
+import { installCli } from "./install.js";
 
 async function main() {
   console.log();
@@ -13,35 +15,25 @@ async function main() {
 
   const selections = await checkbox({
     message: "What would you like to set up? (space to select/deselect, enter to confirm)",
+    pageSize: 15,
     choices: [
       new Separator(" "),
       new Separator("── AI Code Editors ──"),
       {
         name: "Skills — Add Opper skills to your AI code editor",
         value: "skills" as const,
-        checked: true,
       },
       {
         name: "OpenCode — Use Opper models in OpenCode",
         value: "opencode" as const,
       },
-      new Separator(" "),
-      new Separator("── SDKs ──"),
       {
-        name: "Node SDK — AI functions, RAG, and tracing for TypeScript (opperai)",
-        value: "node-sdk" as const,
+        name: "Continue — Use Opper models in Continue.dev",
+        value: "continue" as const,
       },
       {
-        name: "Node Agent SDK — Build agents with tool use and reasoning (@opperai/agents)",
-        value: "node-agents" as const,
-      },
-      {
-        name: "Python SDK — AI functions, RAG, and tracing for Python (opperai)",
-        value: "python-sdk" as const,
-      },
-      {
-        name: "Python Agent SDK — Build agents with tool use and reasoning (opper-agents)",
-        value: "python-agents" as const,
+        name: "Other editors — Open setup guide for Cursor, Cline, and more",
+        value: "other-editors" as const,
       },
       new Separator(" "),
       new Separator("── Tools ──"),
@@ -57,32 +49,50 @@ async function main() {
     return;
   }
 
+  // Ask for config location if OpenCode or Continue is selected
+  let configLocation: "global" | "local" = "global";
+  if (selections.includes("opencode") || selections.includes("continue")) {
+    configLocation = await select({
+      message: "Where should the config be written?",
+      choices: [
+        {
+          name: "Global — applies to all projects",
+          value: "global" as const,
+        },
+        {
+          name: "Local — current directory only",
+          value: "local" as const,
+        },
+      ],
+    });
+  }
+
   if (selections.includes("skills")) {
     await setupSkills();
   }
 
   if (selections.includes("opencode")) {
-    await setupOpenCode();
+    await setupOpenCode(configLocation);
   }
 
-  if (selections.includes("node-sdk")) {
-    await installPackage("npm", "opperai", "Opper Node SDK");
-  }
-
-  if (selections.includes("node-agents")) {
-    await installPackage("npm", "@opperai/agents", "Opper Node Agent SDK");
-  }
-
-  if (selections.includes("python-sdk")) {
-    await installPackage("pip", "opperai", "Opper Python SDK");
-  }
-
-  if (selections.includes("python-agents")) {
-    await installPackage("pip", "opper-agents", "Opper Python Agent SDK");
+  if (selections.includes("continue")) {
+    await setupContinue(configLocation);
   }
 
   if (selections.includes("cli")) {
     await installCli();
+  }
+
+  if (selections.includes("other-editors")) {
+    const url = "https://docs.opper.ai/building/ai-editors";
+    const cmd =
+      process.platform === "darwin"
+        ? `open "${url}"`
+        : process.platform === "win32"
+          ? `start "${url}"`
+          : `xdg-open "${url}"`;
+    exec(cmd);
+    console.log(`\nOpened ${url} in your browser.`);
   }
 
   console.log("\nDone!");

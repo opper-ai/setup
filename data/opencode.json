@@ -5,7 +5,7 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "Opper",
       "options": {
-        "baseURL": "http://localhost:8000/v2/openai",
+        "baseURL": "https://api.opper.ai/v2/openai",
         "apiKey": "{env:OPPER_API_KEY}"
       },
       "models": {
