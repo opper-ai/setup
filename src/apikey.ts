@@ -1,4 +1,4 @@
-import { confirm, input } from "@inquirer/prompts";
+import { confirm, password } from "@inquirer/prompts";
 import { exec } from "node:child_process";
 
 function openBrowser(url: string) {
@@ -11,9 +11,14 @@ function openBrowser(url: string) {
   exec(cmd);
 }
 
+function maskKey(key: string): string {
+  if (key.length <= 8) return "****";
+  return key.slice(0, 3) + "..." + key.slice(-4);
+}
+
 export async function setupApiKey() {
   if (process.env.OPPER_API_KEY) {
-    console.log("OPPER_API_KEY is set.\n");
+    console.log(`OPPER_API_KEY is already set (${maskKey(process.env.OPPER_API_KEY)}).\n`);
     return;
   }
 
@@ -39,10 +44,19 @@ export async function setupApiKey() {
     console.log("\nOpening browser...\n");
   }
 
-  const key = await input({
-    message: "Paste your API key:",
+  const key = await password({
+    message: "Paste your API key (input is hidden):",
+    mask: "*",
     validate: (value) => (value.trim().length > 0 ? true : "API key cannot be empty"),
   });
+
+  const trimmedKey = key.trim();
+  const masked = maskKey(trimmedKey);
+
+  // Set for the rest of this setup session
+  process.env.OPPER_API_KEY = trimmedKey;
+
+  console.log(`\nAPI key set for this setup session (${masked}).`);
 
   const shell = process.env.SHELL || "";
   const rcFile = shell.includes("zsh")
@@ -51,7 +65,6 @@ export async function setupApiKey() {
       ? "~/.bashrc"
       : "your shell profile";
 
-  console.log(`\nAdd this to ${rcFile}:\n`);
-  console.log(`  export OPPER_API_KEY=${key.trim()}\n`);
-  console.log(`Then run: source ${rcFile}\n`);
+  console.log(`To make it permanent, add this to ${rcFile}:\n`);
+  console.log(`  export OPPER_API_KEY=<your-key>\n`);
 }
